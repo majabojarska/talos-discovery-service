@@ -1,0 +1,51 @@
+# Runs two discovery-service instances, each on its own static IP within a
+# local user-defined bridge network. Bring it up with:
+#
+#   docker compose up
+#
+# Each instance is reachable on its own IP inside the `discovery` network:
+#   discovery-1 -> 172.28.0.11  (gRPC :3030, landing :3001, metrics :2122)
+#   discovery-2 -> 172.28.0.12  (gRPC :3030, landing :3001, metrics :2122)
+#
+# For convenience the ports are also published on the host on distinct ports.
+
+services:
+  discovery-1:
+    image: ghcr.io/siderolabs/discovery-service:latest
+    command:
+      - --addr=:3030
+      - --landing-addr=:3001
+      - --metrics-addr=:2122
+      - --debug
+      - --snapshots-enabled=false
+    networks:
+      discovery:
+        ipv4_address: 172.28.0.11
+    ports:
+      - "3030:3030" # gRPC
+      - "3001:3001" # landing page
+      - "2122:2122" # prometheus metrics
+
+  discovery-2:
+    image: ghcr.io/siderolabs/discovery-service:latest
+    command:
+      - --addr=:3030
+      - --landing-addr=:3001
+      - --metrics-addr=:2122
+      - --debug
+      - --snapshots-enabled=false
+    networks:
+      discovery:
+        ipv4_address: 172.28.0.12
+    ports:
+      - "3010:3030" # gRPC
+      - "3011:3001" # landing page
+      - "2132:2122" # prometheus metrics
+
+networks:
+  discovery:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
